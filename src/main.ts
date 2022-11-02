@@ -1,41 +1,104 @@
 import './style.css'
+
 const stranka=
-`<section id="section1">
+`
 <div class="container">
-  <h1 class="header">CURRENCY EXCHANGE</h1>
-  <div class="main">
-   <div class="Amount">
-    <label for="amount">Amount</label>
-    <input type="text" inputmode="decimal" class="input-amount" id="amount" value="1.00">
-   </div>
-   <div class="Currency1">
-    <label for="from">From</label>
-    <input type="text" class="input-currency1" id="from">
-   </div>
-   <div class="Currency2">
-   <label for="to">To</label>
-    <input type="text" class="input-currency2" id="to">
-   </div>
+<center>
+  <h1>Currency Exchange</h1>
+  <div class="box">
+    <div class="top_box">
+      <input type="number" name="" id="num" class="inputs" />
+      <select name="currency" class="currency"></select>
+    </div>
+    <div class="bottom_box">
+      <input type="text" name="" id="ans" class="inputs" disabled />
+      <select name="currency" class="currency"></select>
+    </div>
   </div>
-  <input class="convert-button" type="button" onclick="alert('Vaša hodnota je:')" value="Convert">
-  <div class="rates">
-   <h1 class="rates1">Live Exchange Rates</h1>
-  </div>
-  
-
-
+  <div id="conversion-rate"></div>
+  <button class="btn" id="btn">Convert</button>
+</center>
 </div>
-</section>`
+`
 document.getElementById("app").innerHTML=stranka
-const options = {
-	method: 'GET',
-	headers: {
-		'X-RapidAPI-Key': 'e8b9f75854msh2a9bfb072f3aff8p10b824jsn16a8f43c6852',
-		'X-RapidAPI-Host': 'currency-exchange.p.rapidapi.com'
-	}
-};
 
-fetch('https://currency-exchange.p.rapidapi.com/listquotes', options)
-	.then(response => response.json())
-	.then(response => console.log(response))
-	.catch(err => console.error(err));
+const select = document.querySelectorAll(".currency");
+const btn = document.getElementById("btn");
+const num = document.getElementById("num");
+const ans = document.getElementById("ans");
+const conv = document.getElementById("conversion-rate");
+const unit = 1;
+
+fetch("https://api.frankfurter.app/currencies")
+  .then((data) => data.json())
+  .then((data) => {
+    display(data);
+  });
+
+function display(data) {
+  const entries = Object.entries(data);
+  for (var i = 0; i < entries.length; i++) {
+    select[0].innerHTML += `<option value="${entries[i][0]}">${entries[i][0]}</option>`;
+    select[1].innerHTML += `<option value="${entries[i][0]}">${entries[i][0]}</option>`;
+  }
+}
+
+btn.addEventListener("click", () => {
+  let currency1 = select[0].value;
+  let currency2 = select[1].value;
+  let value = num.value;
+
+  if (currency1 !== currency2 && value !== "") {
+    // if (currency1 !== currency2) {
+    convert(currency1, currency2, value);
+  } else {
+    if (currency1 === currency2) {
+      alert("Please choose a different currency");
+      console.log(value);
+    } else if (value === "") {
+      alert("Please enter value to convert");
+    }
+  }
+});
+
+function convert(currency1, currency2, value) {
+  const host = "api.frankfurter.app";
+  if (value === "0") {
+    ans.value = "0";
+    fetch(
+      `https://${host}/latest?amount=${unit}&from=${currency1}&to=${currency2}`
+    )
+      .then((v) => v.json())
+      .then((v) => {
+        conv.innerHTML =
+          "Conversion rate: 1 " +
+          currency1 +
+          " = " +
+          Object.values(v.rates)[0] +
+          " " +
+          currency2;
+      });
+  } else {
+    fetch(
+      `https://${host}/latest?amount=${value}&from=${currency1}&to=${currency2}`
+    )
+      .then((val) => val.json())
+      .then((val) => {
+        // console.log(val);
+        // console.log(Object.values(val.rates)[0]);
+        ans.value = Object.values(val.rates)[0];
+        fetch(
+          `https://${host}/latest?amount=${unit}&from=${currency1}&to=${currency2}`
+        )
+          .then((v) => v.json())
+          .then((v) => {
+            conv.innerHTML =
+              "Conversion rate: 1 " +
+              currency1 +
+              " = " +
+              Object.values(v.rates)[0] +
+              currency2;
+          });
+      });
+  }
+}
